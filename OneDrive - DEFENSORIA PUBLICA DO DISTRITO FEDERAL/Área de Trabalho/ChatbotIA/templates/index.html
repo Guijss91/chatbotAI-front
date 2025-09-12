@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom Tailwind colors */
+      @layer base {
+        body {
+          background-color: white;
+          color: #385546;
+        }
+      }
+    </style>
+  </head>
+  <body class="flex flex-col items-center justify-center h-screen p-4">
+    <div
+      class="w-full max-w-xl bg-white rounded-lg shadow-lg p-6 flex flex-col"
+    >
+      <h1 class="text-3xl font-bold mb-4 text-[#385546]">Chatbot Interface</h1>
+      <div
+        id="chat"
+        class="flex flex-col space-y-4 overflow-auto h-96 mb-4 border border-[#385546] rounded p-4"
+      >
+        <!-- Mensagens aparecerão aqui -->
+      </div>
+      <form id="chat-form" class="flex">
+        <input
+          type="text"
+          id="question-input"
+          placeholder="Digite sua pergunta..."
+          class="flex-grow border border-[#385546] rounded-l px-4 py-2 text-[#385546] focus:outline-none focus:ring-2 focus:ring-[#385546]"
+          autocomplete="off"
+          required
+        />
+        <button
+          type="submit"
+          class="bg-[#385546] text-white px-6 rounded-r hover:bg-[#2e443a] transition"
+        >
+          Enviar
+        </button>
+      </form>
+    </div>
+
+    <script>
+      const form = document.getElementById("chat-form");
+      const input = document.getElementById("question-input");
+      const chat = document.getElementById("chat");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const question = input.value.trim();
+        if (!question) return;
+
+        // Adicionar pergunta ao chat
+        const questionEl = document.createElement("div");
+        questionEl.textContent = question;
+        questionEl.className =
+          "self-end bg-[#385546] text-white rounded px-4 py-2 max-w-xs";
+        chat.appendChild(questionEl);
+
+        // Limpar campo de entrada
+        input.value = "";
+
+        // Enviar pergunta para backend
+        try {
+          const res = await fetch("/ask", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ question }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            const answerEl = document.createElement("div");
+            answerEl.textContent = data.answer || JSON.stringify(data);
+            answerEl.className =
+              "self-start bg-gray-200 text-[#385546] rounded px-4 py-2 max-w-xs";
+            chat.appendChild(answerEl);
+            chat.scrollTop = chat.scrollHeight;
+          } else {
+            alert("Erro: " + (data.error || "Não foi possível obter resposta"));
+          }
+        } catch (err) {
+          alert("Erro na comunicação com o servidor");
+        }
+      });
+    </script>
+  </body>
+</html>
