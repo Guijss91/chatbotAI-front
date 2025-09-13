@@ -1,93 +1,273 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chatbot Interface</title>
+    <title>Chatbot Interface Dinâmica</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      /* Custom Tailwind colors */
-      @layer base {
         body {
-          background-color: white;
-          color: #385546;
+            background-color: white;
+            color: #385546;
         }
-      }
+        /* Remove contorno caixa e centraliza com 90% largura */
+        #chat {
+            width: 90vw;
+            max-width: 900px;
+            height: 80vh;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        /* Bolhas limpas, sem bordas extras */
+        .chat-message {
+            max-width: 70%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            line-height: 1.3;
+            white-space: pre-wrap;
+        }
+        .user-message {
+            align-self: flex-end;
+            background-color: #385546;
+            color: white;
+            border-bottom-right-radius: 0;
+        }
+        .bot-message {
+            align-self: flex-start;
+            background-color: #e2e8f0;
+            color: #385546;
+            border-bottom-left-radius: 0;
+        }
+        /* Menu lateral fixo */
+        #sidebar {
+            width: 280px;
+            background-color: #f3f6f4;
+            border-right: 1px solid #d1d5db;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        #sidebar h2 {
+            font-size: 1.5rem;
+            color: #385546;
+            margin-bottom: 1rem;
+        }
+        .conversation-item {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            background-color: #d9ead3;
+            color: #385546;
+            transition: background-color 0.2s ease;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .conversation-item:hover, .conversation-item.active {
+            background-color: #aecab1;
+        }
+        #new-chat-btn {
+            background-color: #385546;
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        #new-chat-btn:hover {
+            background-color: #2e443a;
+        }
+        /* Layout principal flex */
+        #main-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+        #chat-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            justify-content: space-between;
+        }
+        #input-area {
+            display: flex;
+            gap: 0.75rem;
+            padding-top: 1rem;
+        }
+        #question-input {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 9999px;
+            border: 1px solid #385546;
+            outline: none;
+            color: #385546;
+            font-size: 1rem;
+            width: 47vw;
+        }
+        #question-input:focus {
+            box-shadow: 0 0 0 3px rgba(56, 85, 70, 0.5);
+        }
+        #send-btn {
+            background-color: #385546;
+            border: none;
+            color: white;
+            border-radius: 9999px;
+            padding: 0 1.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #send-btn:hover {
+            background-color: #2e443a;
+        }
     </style>
-  </head>
-  <body class="flex flex-col items-center justify-center h-screen p-4">
-    <div
-      class="w-full max-w-xl bg-white rounded-lg shadow-lg p-6 flex flex-col"
-    >
-      <h1 class="text-3xl font-bold mb-4 text-[#385546]">Chatbot Interface</h1>
-      <div
-        id="chat"
-        class="flex flex-col space-y-4 overflow-auto h-96 mb-4 border border-[#385546] rounded p-4"
-      >
-        <!-- Mensagens aparecerão aqui -->
-      </div>
-      <form id="chat-form" class="flex">
-        <input
-          type="text"
-          id="question-input"
-          placeholder="Digite sua pergunta..."
-          class="flex-grow border border-[#385546] rounded-l px-4 py-2 text-[#385546] focus:outline-none focus:ring-2 focus:ring-[#385546]"
-          autocomplete="off"
-          required
-        />
-        <button
-          type="submit"
-          class="bg-[#385546] text-white px-6 rounded-r hover:bg-[#2e443a] transition"
-        >
-          Enviar
-        </button>
-      </form>
+</head>
+<body>
+    <div id="main-container">
+        <div id="sidebar">
+            <h2>Conversas</h2>
+            <button id="new-chat-btn">Nova Conversa</button>
+            <div id="conversations-list">
+                <!-- Lista de conversas armazenadas -->
+            </div>
+        </div>
+        <div id="chat-container">
+            <div id="chat">
+                <!-- Mensagens do chat -->
+            </div>
+            <form id="chat-form" autocomplete="off">
+                <input type="text" id="question-input" placeholder="Digite sua pergunta..." required />
+                <button type="submit" id="send-btn">Enviar</button>
+            </form>
+        </div>
     </div>
 
     <script>
-      const form = document.getElementById("chat-form");
-      const input = document.getElementById("question-input");
-      const chat = document.getElementById("chat");
+        const chatForm = document.getElementById('chat-form');
+        const questionInput = document.getElementById('question-input');
+        const chat = document.getElementById('chat');
+        const conversationsList = document.getElementById('conversations-list');
+        const newChatBtn = document.getElementById('new-chat-btn');
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const question = input.value.trim();
-        if (!question) return;
+        // Armazenar as conversas no localStorage
+        let conversations = JSON.parse(localStorage.getItem('conversations')) || [];
+        let currentConversationIndex = null;
+        let currentMessages = [];
 
-        // Adicionar pergunta ao chat
-        const questionEl = document.createElement("div");
-        questionEl.textContent = question;
-        questionEl.className =
-          "self-end bg-[#385546] text-white rounded px-4 py-2 max-w-xs";
-        chat.appendChild(questionEl);
-
-        // Limpar campo de entrada
-        input.value = "";
-
-        // Enviar pergunta para backend
-        try {
-          const res = await fetch("/ask", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ question }),
-          });
-          const data = await res.json();
-          if (res.ok) {
-            const answerEl = document.createElement("div");
-            answerEl.textContent = data.answer || JSON.stringify(data);
-            answerEl.className =
-              "self-start bg-gray-200 text-[#385546] rounded px-4 py-2 max-w-xs";
-            chat.appendChild(answerEl);
-            chat.scrollTop = chat.scrollHeight;
-          } else {
-            alert("Erro: " + (data.error || "Não foi possível obter resposta"));
-          }
-        } catch (err) {
-          alert("Erro na comunicação com o servidor");
+        function renderConversations() {
+            conversationsList.innerHTML = '';
+            conversations.forEach((conv, index) => {
+                const div = document.createElement('div');
+                div.className = 'conversation-item' + (index === currentConversationIndex ? ' active' : '');
+                div.textContent = conv.title || `Conversa ${index + 1}`;
+                div.title = conv.title || `Conversa ${index + 1}`;
+                div.onclick = () => {
+                    if (index !== currentConversationIndex) {
+                        saveCurrentConversation();
+                        loadConversation(index);
+                    }
+                };
+                conversationsList.appendChild(div);
+            });
         }
-      });
+
+        function saveCurrentConversation() {
+            if (currentConversationIndex !== null) {
+                conversations[currentConversationIndex].messages = currentMessages;
+            }
+        }
+
+        function loadConversation(index) {
+            currentConversationIndex = index;
+            currentMessages = conversations[index].messages || [];
+            renderMessages();
+            renderConversations();
+        }
+
+        function renderMessages() {
+            chat.innerHTML = '';
+            currentMessages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'chat-message ' + (msg.sender === 'user' ? 'user-message' : 'bot-message');
+                div.textContent = msg.text;
+                chat.appendChild(div);
+            });
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function addMessage(sender, text) {
+            currentMessages.push({ sender, text });
+            renderMessages();
+        }
+
+        function startNewConversation() {
+            saveCurrentConversation();
+            const title = prompt('Digite um título para esta conversa:', 'Nova conversa');
+            if (!title) return;
+            currentConversationIndex = conversations.length;
+            currentMessages = [];
+            conversations.push({ title, messages: [] });
+            renderConversations();
+            renderMessages();
+        }
+
+        chatForm.addEventListener('submit', async e => {
+            e.preventDefault();
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            addMessage('user', question);
+            questionInput.value = '';
+
+            try {
+                const res = await fetch('/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    addMessage('bot', data.answer || '');
+                } else {
+                    addMessage('bot', 'Erro: ' + (data.error || 'Não foi possível obter resposta'));
+                }
+            } catch {
+                addMessage('bot', 'Erro na comunicação com o servidor');
+            }
+        });
+
+        newChatBtn.addEventListener('click', () => {
+            startNewConversation();
+        });
+
+        // Iniciar com uma conversa vazia se não houver nada salvo
+        if (conversations.length === 0) {
+            conversations.push({ title: 'Conversa 1', messages: [] });
+            currentConversationIndex = 0;
+        } else {
+            currentConversationIndex = 0;
+            currentMessages = conversations[0].messages || [];
+        }
+        renderConversations();
+        renderMessages();
+
+        // Salvar conversas periodicamente
+        window.addEventListener('beforeunload', () => {
+            saveCurrentConversation();
+            localStorage.setItem('conversations', JSON.stringify(conversations));
+        });
     </script>
-  </body>
+</body>
 </html>

@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-N8N_ENDPOINT = os.getenv('N8N_ENDPOINT', 'https://laboratorio-n8n.nu7ixt.easypanel.host/webhook/chatbot')
+N8N_ENDPOINT = os.getenv('N8N_ENDPOINT', 'http://localhost:5678/webhook/chatbot')
 
 @app.route('/')
 def index():
