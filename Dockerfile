@@ -9,4 +9,6 @@ COPY . .
 
 EXPOSE 5000
 
+ENV N8N_ENDPOINT=http://host.docker.internal:5678/webhook/chatbot
+
 CMD ["python", "app.py"]
