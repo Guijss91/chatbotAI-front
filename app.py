@@ -21,7 +21,7 @@ def ask():
     print(f"Tentando conectar em: {N8N_ENDPOINT}")
     
     try:
-        response = requests.post(N8N_ENDPOINT, json={'question': question}, timeout=30)
+        response = requests.post(N8N_ENDPOINT, json={'question': question}, timeout=180)
         response.raise_for_status()
         n8n_data = response.json()
 
