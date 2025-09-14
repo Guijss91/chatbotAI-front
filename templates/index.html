@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chatbot Interface Dinâmica</title>
+    <title>Chatbot Interface Dinâmica com Chat ID</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -170,6 +170,11 @@
     </div>
 
     <script>
+        // Função para gerar IDs únicos simples
+        function generateChatId() {
+            return 'chat-' + Math.random().toString(36).substring(2, 12) + '-' + Date.now();
+        }
+
         const chatForm = document.getElementById('chat-form');
         const questionInput = document.getElementById('question-input');
         const chat = document.getElementById('chat');
@@ -180,6 +185,8 @@
         let conversations = JSON.parse(localStorage.getItem('conversations')) || [];
         let currentConversationIndex = null;
         let currentMessages = [];
+
+        // Nos dados da conversa, agora cada objeto terá um chatId exclusivo
 
         function updateDeleteBtn() {
             if (currentConversationIndex !== null) {
@@ -211,6 +218,7 @@
             if (currentConversationIndex !== null) {
                 conversations[currentConversationIndex].messages = currentMessages;
             }
+            localStorage.setItem('conversations', JSON.stringify(conversations));
         }
 
         function loadConversation(index) {
@@ -242,7 +250,8 @@
             if (!title) return;
             currentConversationIndex = conversations.length;
             currentMessages = [];
-            conversations.push({ title, messages: [] });
+            const chatId = generateChatId();
+            conversations.push({ title, messages: [], chatId });
             renderConversations();
             renderMessages();
         }
@@ -255,11 +264,13 @@
             addMessage('user', question);
             questionInput.value = '';
 
+            const chatId = conversations[currentConversationIndex]?.chatId;
+
             try {
                 const res = await fetch('/ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question })
+                    body: JSON.stringify({ question, chatId })
                 });
                 const data = await res.json();
                 if (res.ok) {
@@ -280,15 +291,15 @@
             if (currentConversationIndex !== null) {
                 if (confirm('Tem certeza que deseja excluir esta conversa?')) {
                     conversations.splice(currentConversationIndex, 1);
-                    localStorage.setItem('conversations', JSON.stringify(conversations));
                     if (conversations.length === 0) {
-                        conversations.push({ title: 'Conversa 1', messages: [] });
+                        conversations.push({ title: 'Conversa 1', messages: [], chatId: generateChatId() });
                         currentConversationIndex = 0;
                         currentMessages = [];
                     } else {
                         currentConversationIndex = Math.max(0, currentConversationIndex - 1);
                         currentMessages = conversations[currentConversationIndex].messages || [];
                     }
+                    saveCurrentConversation();
                     renderConversations();
                     renderMessages();
                 }
@@ -296,18 +307,18 @@
         });
 
         if (conversations.length === 0) {
-            conversations.push({ title: 'Conversa 1', messages: [] });
+            conversations.push({ title: 'Conversa 1', messages: [], chatId: generateChatId() });
             currentConversationIndex = 0;
         } else {
             currentConversationIndex = 0;
             currentMessages = conversations[0].messages || [];
         }
+
         renderConversations();
         renderMessages();
 
         window.addEventListener('beforeunload', () => {
             saveCurrentConversation();
-            localStorage.setItem('conversations', JSON.stringify(conversations));
         });
     </script>
 </body>
