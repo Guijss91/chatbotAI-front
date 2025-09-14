@@ -4,7 +4,8 @@ import os
 
 app = Flask(__name__)
 
-N8N_ENDPOINT = os.getenv('N8N_ENDPOINT', 'https://laboratorio-n8n.nu7ixt.easypanel.host/webhook/chatbot')
+# Configuração mais flexível do endpoint
+N8N_ENDPOINT = os.getenv('N8N_ENDPOINT', 'http://localhost:5678/webhook/chatbot')
 
 @app.route('/')
 def index():
@@ -16,12 +17,14 @@ def ask():
     question = data.get('question')
     if not question:
         return jsonify({'error': 'No question provided'}), 400
+    
+    print(f"Tentando conectar em: {N8N_ENDPOINT}")
+    
     try:
         response = requests.post(N8N_ENDPOINT, json={'question': question}, timeout=30)
         response.raise_for_status()
         n8n_data = response.json()
 
-        # Debug: mostrar a resposta recebida
         print(f"Resposta recebida do n8n: {n8n_data}")
 
         # Verificar se é lista ou dict e extrair 'output'
@@ -37,9 +40,14 @@ def ask():
 
         return jsonify({'answer': answer})
     except requests.exceptions.RequestException as e:
-        return jsonify({'error': f'Erro de conexão: {str(e)}'}), 500
+        error_msg = f'Erro de conexão: {str(e)}'
+        print(error_msg)
+        return jsonify({'error': error_msg}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e)
+        print(f"Erro geral: {error_msg}")
+        return jsonify({'error': error_msg}), 500
 
 if __name__ == '__main__':
+    print(f"Chatbot iniciado. Endpoint n8n configurado: {N8N_ENDPOINT}")
     app.run(host='0.0.0.0', port=5000, debug=True)
