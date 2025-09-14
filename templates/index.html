@@ -10,7 +10,6 @@
             background-color: white;
             color: #385546;
         }
-        /* Remove contorno caixa e centraliza com 90% largura */
         #chat {
             width: 90vw;
             max-width: 900px;
@@ -22,7 +21,6 @@
             flex-direction: column;
             gap: 0.75rem;
         }
-        /* Bolhas limpas, sem bordas extras */
         .chat-message {
             max-width: 70%;
             padding: 0.75rem 1rem;
@@ -42,7 +40,6 @@
             color: #385546;
             border-bottom-left-radius: 0;
         }
-        /* Menu lateral fixo */
         #sidebar {
             width: 280px;
             background-color: #f3f6f4;
@@ -57,6 +54,9 @@
             font-size: 1.5rem;
             color: #385546;
             margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .conversation-item {
             padding: 0.5rem 0.75rem;
@@ -81,13 +81,27 @@
             border-radius: 0.5rem;
             border: none;
             cursor: pointer;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             transition: background-color 0.3s ease;
         }
         #new-chat-btn:hover {
             background-color: #2e443a;
         }
-        /* Layout principal flex */
+        #delete-chat-btn {
+            background-color: #b91c1c;
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            transition: background-color 0.3s ease;
+            display: none;
+        }
+        #delete-chat-btn:hover {
+            background-color: #7f1d1d;
+        }
         #main-container {
             display: flex;
             height: 100vh;
@@ -100,10 +114,11 @@
             padding: 1rem;
             justify-content: space-between;
         }
-        #input-area {
+        #form-area {
             display: flex;
             gap: 0.75rem;
             padding-top: 1rem;
+            width: 47vw;
         }
         #question-input {
             flex-grow: 1;
@@ -113,7 +128,6 @@
             outline: none;
             color: #385546;
             font-size: 1rem;
-            width: 47vw;
         }
         #question-input:focus {
             box-shadow: 0 0 0 3px rgba(56, 85, 70, 0.5);
@@ -137,19 +151,20 @@
 <body>
     <div id="main-container">
         <div id="sidebar">
-            <h2>Conversas</h2>
+            <h2>
+                Conversas
+            </h2>
             <button id="new-chat-btn">Nova Conversa</button>
-            <div id="conversations-list">
-                <!-- Lista de conversas armazenadas -->
-            </div>
+            <button id="delete-chat-btn" title="Excluir conversa selecionada">Excluir Conversa</button>
+            <div id="conversations-list"></div>
         </div>
         <div id="chat-container">
-            <div id="chat">
-                <!-- Mensagens do chat -->
-            </div>
+            <div id="chat"></div>
             <form id="chat-form" autocomplete="off">
-                <input type="text" id="question-input" placeholder="Digite sua pergunta..." required />
-                <button type="submit" id="send-btn">Enviar</button>
+                <div id="form-area">
+                    <input type="text" id="question-input" placeholder="Digite sua pergunta..." required />
+                    <button type="submit" id="send-btn">Enviar</button>
+                </div>
             </form>
         </div>
     </div>
@@ -160,11 +175,19 @@
         const chat = document.getElementById('chat');
         const conversationsList = document.getElementById('conversations-list');
         const newChatBtn = document.getElementById('new-chat-btn');
+        const deleteChatBtn = document.getElementById('delete-chat-btn');
 
-        // Armazenar as conversas no localStorage
         let conversations = JSON.parse(localStorage.getItem('conversations')) || [];
         let currentConversationIndex = null;
         let currentMessages = [];
+
+        function updateDeleteBtn() {
+            if (currentConversationIndex !== null) {
+                deleteChatBtn.style.display = 'block';
+            } else {
+                deleteChatBtn.style.display = 'none';
+            }
+        }
 
         function renderConversations() {
             conversationsList.innerHTML = '';
@@ -181,6 +204,7 @@
                 };
                 conversationsList.appendChild(div);
             });
+            updateDeleteBtn();
         }
 
         function saveCurrentConversation() {
@@ -252,7 +276,25 @@
             startNewConversation();
         });
 
-        // Iniciar com uma conversa vazia se não houver nada salvo
+        deleteChatBtn.addEventListener('click', () => {
+            if (currentConversationIndex !== null) {
+                if (confirm('Tem certeza que deseja excluir esta conversa?')) {
+                    conversations.splice(currentConversationIndex, 1);
+                    localStorage.setItem('conversations', JSON.stringify(conversations));
+                    if (conversations.length === 0) {
+                        conversations.push({ title: 'Conversa 1', messages: [] });
+                        currentConversationIndex = 0;
+                        currentMessages = [];
+                    } else {
+                        currentConversationIndex = Math.max(0, currentConversationIndex - 1);
+                        currentMessages = conversations[currentConversationIndex].messages || [];
+                    }
+                    renderConversations();
+                    renderMessages();
+                }
+            }
+        });
+
         if (conversations.length === 0) {
             conversations.push({ title: 'Conversa 1', messages: [] });
             currentConversationIndex = 0;
@@ -263,7 +305,6 @@
         renderConversations();
         renderMessages();
 
-        // Salvar conversas periodicamente
         window.addEventListener('beforeunload', () => {
             saveCurrentConversation();
             localStorage.setItem('conversations', JSON.stringify(conversations));

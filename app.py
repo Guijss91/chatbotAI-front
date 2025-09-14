@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-# Configuração mais flexível do endpoint
+# Endpoint do n8n atualizado
 N8N_ENDPOINT = os.getenv('N8N_ENDPOINT', 'https://laboratorio-n8n.nu7ixt.easypanel.host/webhook/chatbot')
 
 @app.route('/')
